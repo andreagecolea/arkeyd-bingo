@@ -1,0 +1,133 @@
+const express = require('express');
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
+  cors: { origin: "*", methods: ["GET", "POST"] }
+});
+
+const PORT = 3000;
+
+let players = [];
+let calledNumbers = new Set(); 
+let intervalId = null;
+let gameOngoing = false;
+
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('joinLobby', (username) => {
+    console.log(`${username} joined the lobby`);
+
+    if (!gameOngoing) {
+      players.push({ id: socket.id, name: username, ready: false, cards: 0, coins: 0 });
+      io.emit('updateLobby', players);
+    } else {
+      socket.emit('waitForNextGame');
+    }
+  });
+
+  socket.on('setReady', () => {
+    const player = players.find(p => p.id === socket.id);
+    if (player) {
+      player.ready = true;
+      console.log(`${player.name} is ready`);
+      io.emit('updateLobby', players);
+  
+      if (players.length > 0 && players.every(p => p.ready)) {
+        console.log('All players ready! Starting game...');
+        io.emit('startGame');  // Emits to all players to start the game
+        startNumberCalling();
+        gameOngoing = true;
+      }
+    }
+  });
+  
+
+  socket.on('updatePlayerData', ({ cards, coins }) => {
+    const player = players.find(p => p.id === socket.id);
+    if (player) {
+      player.cards = cards;
+      player.coins = coins;
+    }
+  });
+
+  socket.on('declareWinner', (username) => {
+    const winner = players.find(p => p.name === username);
+    let earnedCoins = 0; // Default value for earnedCoins
+    
+    if (winner) {
+      earnedCoins = winner.cards * 10; // Coins earned from the game (based on the cards)
+      winner.coins += earnedCoins; // Add the earned coins to their total balance
+      console.log(`${username} won! Awarded ${earnedCoins} coins.`);
+    }
+  
+    // Emit the winner declared event to all clients, sending the earnedCoins separately
+    io.emit('winnerDeclared', { username, earnedCoins, updatedPlayers: players });
+  
+    // Wait before resetting the game to allow the winner popup to be shown
+    setTimeout(() => {
+      stopNumberCalling();
+      resetGame();
+    }, 5000); // Popup will show for 5 seconds before game reset
+  });
+  
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    players = players.filter(p => p.id !== socket.id);
+    io.emit('updateLobby', players);
+
+    if (players.length === 0) {
+      stopNumberCalling();
+      gameOngoing = false;
+    }
+  });
+});
+
+
+function startNumberCalling() {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  
+    intervalId = setInterval(() => {
+      if (calledNumbers.size >= 75) {
+        console.log('All numbers have been called.');
+        stopNumberCalling();
+        return;
+      }
+  
+      let number;
+      do {
+        number = Math.floor(Math.random() * 75) + 1;
+      } while (calledNumbers.has(number)); 
+  
+      calledNumbers.add(number);
+  
+      console.log('Calling number:', number);
+      
+      // Emit the number to all players, but only once
+      io.emit('numberCalled', number);
+    }, 7500);
+  }
+  
+
+function stopNumberCalling() {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+    console.log('Stopped calling numbers.');
+  }
+}
+
+
+function resetGame() {
+  calledNumbers = new Set();
+  players.forEach(p => p.ready = false); // reset everyone to "not ready"
+  gameOngoing = false;
+  io.emit('updateLobby', players);
+}
+
+http.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

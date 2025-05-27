@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcade Bingo - Simula</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    /* Apply smooth font */
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Press Start 2P', cursive;
+      background: url('img/bingo-bg.gif') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+      text-align: center;
+      overflow: hidden; /* Hide overflow for smooth animation */
+      animation: fadeIn 1s ease-out; /* Fade in effect */
+    }
+
+    /* Animation for the body */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .intro-screen {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px #ff2d55;
+      animation: slideIn 1s ease-out forwards; /* Slide-in animation */
+    }
+
+    /* Animation for the intro screen */
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .intro-screen h1 {
+      font-size: 1.5em;
+      color: #ff2d55;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(255, 45, 85, 0.8); /* Subtle glow effect */
+      animation: bounceIn 2s ease-out; /* Bounce animation */
+    }
+
+    /* Bounce animation for the heading */
+    @keyframes bounceIn {
+      0% {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+      60% {
+        transform: translateY(10px);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    button {
+      background-color: #ff2d55;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1em;
+      font-family: 'Press Start 2P';
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Button hover effect */
+    button:hover {
+      background-color: #ff1f3d; /* Darker red on hover */
+      transform: scale(1.05); /* Slight enlarge effect */
+    }
+
+    /* Button focus effect */
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 15px rgba(255, 45, 85, 0.8); /* Glow effect on focus */
+    }
+
+    .coins-display {
+      margin-top: 15px;
+      font-size: 0.8em;
+      color: #ff2d55;
+      opacity: 0;
+      animation: fadeInCoins 1s ease-out 1s forwards; /* Fade-in for coins display */
+    }
+
+    /* Animation for the coins display */
+    @keyframes fadeInCoins {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+</style>
+
+</head>
+<body>
+  <div class="intro-screen">
+    <h1>ARCADE BINGO</h1>
+    <div class="coins-display">Coins: <span id="coinCount">...</span></div>
+    <button onclick="startCardSelection()">Simulan ang Laro</button>
+  </div>
+
+  <script>
+    const currentUser = localStorage.getItem('currentUser');
+    const users = JSON.parse(localStorage.getItem('bingoUsers') || '{}');
+
+    if (!currentUser || !users[currentUser]) {
+      alert('Walang active user, balik sa login.');
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('coinCount').textContent = users[currentUser].coins;
+    }
+
+    function startCardSelection() {
+      window.location.href = 'card-select.html';
+    }
+  </script>
+</body>
+</html>
